@@ -1,6 +1,8 @@
 from django.shortcuts import render
 from django.views import generic
 from .models import Book, Author, BookInstance, Genre
+from django.contrib.auth.mixins import LoginRequiredMixin
+
 # Create your views here.
 
 def index(request):
@@ -18,6 +20,10 @@ def index(request):
     num_genres = Genre.objects.count()
     num_books_word = Book.objects.filter(title__icontains='the').count()
 
+    num_visits = request.session.get('num_visits', 0)
+    num_visits += 1
+    request.session['num_visits'] = num_visits
+
     context = {
         'num_books': num_books,
         'num_instances': num_instances,
@@ -25,6 +31,7 @@ def index(request):
         'num_authors': num_authors,
         'num_genres': num_genres,
         'num_books_word': num_books_word,
+        'num_visits': num_visits
     }
 
     # Render the HTML template index.html with the data in the context variable
@@ -33,23 +40,9 @@ def index(request):
 class BookListView(generic.ListView):
     model = Book
     paginate_by = 10
-    def get_context_data(self, **kwargs):
-        context = super(BookListView, self).get_context_data(**kwargs)
-        context['some_data'] = 'This is just some data'
-        return context
-
-    def get_queryset(self):
-        return Book.objects.filter(title__icontains='war')[:5]
-    template_name = 'books/my_arbitrary_template_name_list.html'
 
 class BookDetailView(generic.DetailView):
-    try:
-        book = Book.objects.get(pk=primary_key)
-    except Book.DoesNotExist:
-        raise Http404('Book does not exist')
-
-    return render(request, 'catalog/book_detail.html', context=
-{'book': book})
+    model = Book
 
 class AuthorListView(generic.ListView):
     model = Author
@@ -57,3 +50,14 @@ class AuthorListView(generic.ListView):
 
 class AuthorDetailView(generic.DetailView):
     model = Author
+
+class LoanedBooksByUserListView(LoginRequiredMixin,generic.ListView):
+    """Generic class-based view listing books on loan to current user."""
+    model = BookInstance
+    template_name = 'catalog/bookinstance_list_borrowed_user.html'
+    paginate_by = 10
+
+    def get_queryset(self):
+        return (
+BookInstance.objects.filter(borrower=self.request.user).filter(status__exact='o').order_by('due_back')
+        )
