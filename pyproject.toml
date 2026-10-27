@@ -6,4 +6,5 @@ dependencies = [
     "channels[daphne]",
     "django>=6.1.1",
     "django-allauth>=65.21.0",
+    "django-environ>=0.14.0",
 ]
