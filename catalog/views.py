@@ -8,6 +8,9 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from .forms import RenewBookForm
 from .models import BookInstance
+from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.urls import reverse_lazy
+from django.views.generic.edit import CreateView, UpdateView, DeleteView
 import datetime
 
 # Create your views here.
